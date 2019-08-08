@@ -2,9 +2,9 @@ const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
 const errorController = require('./controllers/error');
-const mongoConnect = require('./util/database').mongoConnect;
 const User = require('./models/user');
 
 const app = express();
@@ -19,9 +19,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
-  User.findById('5d4a122e1b21953c61f4ac5b')
+  User.findById('5d4aa688d517f053a10dcd6c')
     .then(user => {
-      req.user = new User(user.name, user.email, user.cart, user._id);
+      req.user = user;
       next();
     })
     .catch(err => console.log(err));
@@ -32,6 +32,25 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect(() => {
-  app.listen(3000);
-});
+mongoose
+  .connect(
+    'mongodb+srv://davidmateo:THx68iwPS6i&@cluster0-i3tyr.mongodb.net/shop?retryWrites=true&w=majority',
+    { useNewUrlParser: true, useFindAndModify: false, useCreateIndex: true }
+  )
+  .then(result => {
+    console.log('Server Connected!');
+    User.findOne().then(user => {
+      if (!user) {
+        const user = new User({
+          name: 'David',
+          email: 'davidmateo@outlook.com',
+          cart: {
+            items: []
+          }
+        });
+        user.save();
+      }
+    });
+    app.listen(3000);
+  })
+  .catch(err => console.log(err));

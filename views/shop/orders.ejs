@@ -13,10 +13,16 @@
                         <li class="orders__item">
                             <h1>Order - # <%= order._id %></h1>
                             <ul class="orders__products">
-                                <% order.items.forEach(product => { %>
-                                    <li class="orders__products-item"><%= product.title %> (<%= product.quantity %>)</li>
+                                <% let totalArray = [] %>
+                                <% order.products.forEach(p => { %>
+                                    <li class="orders__products-item"> Title: <%= p.product.title %>  |  Units: (<%= p.quantity %>)   |  Price: $<%= p.product.price %>  |  The total is: <% total = p.quantity * p.product.price %>
+                                    <% totalArray.push(total) %>
+                                    <%= total %></li>
                                 <% }); %>
                             </ul>
+                            <% const reducer = (accumulator, currentValue) => accumulator + currentValue %>
+
+                            <h1>Grand Total: <%= totalArray.reduce(reducer) %></h1>
                         </li>
                     <% }); %>
                 </ul>

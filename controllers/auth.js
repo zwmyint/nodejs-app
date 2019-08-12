@@ -1,11 +1,10 @@
+require('dotenv').config();
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 //sendgrid setup
 const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(
-  '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'
-);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const User = require('../models/user');
 

@@ -14,15 +14,20 @@
                             <h1>Order - # <%= order._id %></h1>
                             <ul class="orders__products">
                                 <% let totalArray = [] %>
-                                <% order.products.forEach(p => { %>
-                                    <li class="orders__products-item"> Title: <%= p.product.title %>  |  Units: (<%= p.quantity %>)   |  Price: $<%= p.product.price %>  |  The total is: <% total = p.quantity * p.product.price %>
-                                    <% totalArray.push(total) %>
-                                    <%= total %></li>
-                                <% }); %>
+                                <%order.products.forEach(p => {
+                                  %><li class="orders__products-item">
+                                    Title: <%= p.product.title %>  |
+                                    Units: (<%= p.quantity %>)   |
+                                    Price: $<%= p.product.price %> |
+                                    Subtotal: $<%=total -%>
+                                    <%total = p.quantity * p.product.price%>
+                                    <% totalArray.push(total) %></li>
+                                <%});%>
                             </ul>
                             <% const reducer = (accumulator, currentValue) => accumulator + currentValue %>
 
-                            <h1>Order Total: <%= totalArray.reduce(reducer) %></h1>
+                            <h1>Order Total: $<%= totalArray.reduce(reducer) %></h1>
+                            <a href= "/orders/<%=order._id%>">View Invoice</a>
                         </li>
                     <% }); %>
                 </ul>

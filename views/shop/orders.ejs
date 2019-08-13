@@ -19,8 +19,8 @@
                                     Title: <%= p.product.title %>  |
                                     Units: (<%= p.quantity %>)   |
                                     Price: $<%= p.product.price %> |
+                                    <%let total = p.quantity * p.product.price%>
                                     Subtotal: $<%=total -%>
-                                    <%total = p.quantity * p.product.price%>
                                     <% totalArray.push(total) %></li>
                                 <%});%>
                             </ul>

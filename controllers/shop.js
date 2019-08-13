@@ -168,39 +168,130 @@ exports.getInvoice = (req, res, next) => {
       pdfDoc.pipe(fs.createWriteStream(invoicePath));
       pdfDoc.pipe(res);
 
-      pdfDoc.fontSize(26).text('Invoice', {
-        underline: true
-      });
-      pdfDoc.text('----------------------');
+      pdfDoc
+        .image('util/logo.png', 50, 45, { width: 50 })
+        .fillColor('#444444')
+        .fontSize(20)
+        .text('ACME Inc.', 110, 57)
+        .fontSize(10)
+        .text('ACME Inc.', 200, 50, { align: 'right' })
+        .text('123 Main Street', 200, 65, { align: 'right' })
+        .text('New York, NY, 10025', 200, 80, { align: 'right' })
+        .moveDown();
+
+      pdfDoc
+        .fillColor('#444444')
+        .fontSize(20)
+        .text('Invoice', 50, 160);
+
+      pdfDoc
+        .strokeColor('#aaaaaa')
+        .lineWidth(1)
+        .moveTo(50, 200)
+        .lineTo(550, 200)
+        .stroke();
+
       let totalPrice = 0;
       order.products.forEach(prod => {
         totalPrice += prod.quantity * prod.product.price;
-        pdfDoc.text(
-          prod.product.title +
-            ' - ' +
-            prod.quantity +
-            ' x ' +
-            ' $ ' +
-            prod.product.price
-        );
       });
-      pdfDoc.text('Total Price: $' + totalPrice);
+
+      pdfDoc
+        .fontSize(12)
+        .text(`Invoice Number: 555`, 50, 220)
+        .moveDown()
+        .text(`Invoice Date: ${formatDate(new Date())}`, 50, 245)
+        .moveDown()
+        .font('Helvetica-Bold')
+        .text(`Order Total: ${formatCurrency(totalPrice)}`, 50, 270)
+
+        .text(`Customer: ${order.user.name}`, 300, 220)
+        .moveDown()
+        .moveDown()
+        .moveDown()
+        .moveDown();
+
+      pdfDoc
+        .strokeColor('#aaaaaa')
+        .lineWidth(1)
+        .moveTo(50, 300)
+        .lineTo(550, 300)
+        .stroke()
+        .moveDown()
+        .moveDown()
+        .moveDown();
+
+      let i;
+      const invoiceTableTop = 330;
+
+      function generateTableRow(
+        pdfDoc,
+        y,
+        title,
+        quantity,
+        unitCost,
+        lineTotal
+      ) {
+        pdfDoc
+          .fontSize(10)
+          .text(title, 50, y)
+          .text(quantity, 280, y, { width: 90, align: 'right' })
+          .text(unitCost, 370, y, { width: 90, align: 'right' })
+          .text(lineTotal, 0, y, { align: 'right' });
+      }
+
+      pdfDoc.font('Helvetica-Bold');
+      generateTableRow(
+        pdfDoc,
+        invoiceTableTop,
+        'Title',
+        'Quantity',
+        'Unit Cost',
+        'Line Total'
+      );
+
+      pdfDoc.font('Helvetica').moveDown();
+
+      for (i = 0; i < order.products.length; i++) {
+        const product = order.products[i];
+        let subtotal = product.quantity * product.product.price;
+        const position = invoiceTableTop + (i + 1) * 30;
+        generateTableRow(
+          pdfDoc,
+          position,
+          product.product.title,
+          product.quantity,
+          product.product.price,
+          subtotal
+        );
+      }
+      pdfDoc
+        .strokeColor('#aaaaaa')
+        .lineWidth(1)
+        .moveTo(50, 500)
+        .lineTo(550, 500)
+        .stroke();
+      pdfDoc
+        .fontSize(10)
+        .text(
+          'Payment is due within 15 days. Thank you for your business.',
+          50,
+          680,
+          { align: 'center', width: 500 }
+        );
       pdfDoc.end();
-      // fs.readFile(invoicePath, (err, data) => {
-      //   if (err) {
-      //     return next(err);
-      //   }
-      //   res.setHeader('Content-Type', 'application/pdf');
-      //   res.setHeader(
-      //     'Content-Disposition',
-      //     'attachment; filename="' + invoiceName + '"'
-      //   );
 
-      //   res.send(data);
-      // });
-      // const file = fs.createReadStream(invoicePath);
+      function formatDate(date) {
+        const day = date.getDate();
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
 
-      // file.pipe(res);
+        return year + '/' + month + '/' + day;
+      }
+
+      function formatCurrency(cents) {
+        return '$' + cents.toFixed(2);
+      }
     })
     .catch(err => {
       console.log(err);

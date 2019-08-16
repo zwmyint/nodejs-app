@@ -19,7 +19,7 @@ router.post(
   [
     body('title')
       .isString()
-      .isLength({ min: 5 })
+      .isLength({ min: 3 })
       .trim(),
     body('price').isFloat(),
     body('description')
@@ -37,7 +37,7 @@ router.post(
   [
     body('title')
       .isString()
-      .isLength({ min: 5 })
+      .isLength({ min: 3 })
       .trim(),
     body('price').isFloat(),
     body('description')

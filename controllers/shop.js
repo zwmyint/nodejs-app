@@ -1,14 +1,16 @@
-const Product = require('../models/product');
-const Order = require('../models/order');
 const fs = require('fs');
 const path = require('path');
 
 const PDFDocument = require('pdfkit');
 
+const Product = require('../models/product');
+const Order = require('../models/order');
+
 exports.getProducts = (req, res, next) => {
   Product.find()
     .then(products => {
-      res.render('shop/index', {
+      console.log(products);
+      res.render('shop/product-list', {
         prods: products,
         pageTitle: 'All Products',
         path: '/products'
@@ -82,6 +84,11 @@ exports.postCart = (req, res, next) => {
     .then(result => {
       console.log(result);
       res.redirect('/cart');
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
     });
 };
 
@@ -111,6 +118,7 @@ exports.postOrder = (req, res, next) => {
       const order = new Order({
         user: {
           name: req.user.name,
+          email: req.user.email,
           userId: req.user
         },
         products: products
@@ -118,7 +126,7 @@ exports.postOrder = (req, res, next) => {
       return order.save();
     })
     .then(result => {
-      req.user.clearCart();
+      return req.user.clearCart();
     })
     .then(() => {
       res.redirect('/orders');

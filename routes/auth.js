@@ -11,14 +11,11 @@ router.get('/signup', authController.getSignup);
 router.post(
   '/login',
   [
-    check('email')
+    body('email')
       .isEmail()
-      .withMessage('Please enter a valid email address')
+      .withMessage('Please enter a valid email address.')
       .normalizeEmail(),
-    body(
-      'password',
-      'Please enter a password only with numbers and text and at least 6 characters'
-    )
+    body('password', 'Password has to be valid.')
       .isLength({ min: 6 })
       .isAlphanumeric()
       .trim()

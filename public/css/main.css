@@ -289,3 +289,31 @@ form {
     display: none;
   }
 }
+
+/* loader */
+.loader {
+  position: absolute;
+  top: 25%;
+  left: 37%;
+  z-index: 9000;
+}
+.loader svg {
+  height: 5.5rem;
+  width: 5.5rem;
+  fill: #f59a83;
+  transform-origin: 44% 50%;
+  animation: rotate 1.5s infinite linear;
+}
+
+.relative {
+  position: relative;
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

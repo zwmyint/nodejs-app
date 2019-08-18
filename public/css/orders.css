@@ -1,6 +1,7 @@
 .orders {
   margin: 1rem auto !important;
   width: 90%;
+  max-width: 1080px;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -25,7 +26,23 @@
 
 .orders__products-item {
   margin: 0.5rem 0;
-  padding: 0.5rem;
   border: 1px solid #00695c;
   color: #00695c;
+}
+
+.flex h1 {
+  padding: 0 5px 0 0;
+}
+.flex h1:last-child {
+  padding: 0;
+}
+.wide {
+  width: 40%;
+}
+
+.flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
 }

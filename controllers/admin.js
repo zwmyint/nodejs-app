@@ -2,6 +2,7 @@ const fileHelper = require('../util/file');
 const { validationResult } = require('express-validator');
 const Product = require('../models/product');
 const User = require('../models/user');
+const ejs_helpers = require('../util/helpers');
 
 exports.getAddProduct = (req, res, next) => {
   res.render('admin/edit-product', {
@@ -178,7 +179,8 @@ exports.getProducts = (req, res, next) => {
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
-        path: '/admin/products'
+        path: '/admin/products',
+        helpers: ejs_helpers
       });
     })
     .catch(err => {

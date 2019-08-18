@@ -1,7 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 
+require('dotenv').config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+const ejs_helpers = require('../util/helpers');
 const PDFDocument = require('pdfkit');
+const formatDate = require('date-fns/format');
 
 const Product = require('../models/product');
 const Order = require('../models/order');
@@ -30,7 +35,8 @@ exports.getProducts = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE)
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
+        helpers: ejs_helpers
       });
     })
     .catch(err => {
@@ -47,7 +53,8 @@ exports.getProduct = (req, res, next) => {
       res.render('shop/product-detail', {
         product: product,
         pageTitle: product.title,
-        path: '/products'
+        path: '/products',
+        helpers: ejs_helpers
       });
     })
     .catch(err => {
@@ -79,7 +86,8 @@ exports.getIndex = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE)
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
+        helpers: ejs_helpers
       });
     })
     .catch(err => {
@@ -98,7 +106,8 @@ exports.getCart = (req, res, next) => {
       res.render('shop/cart', {
         path: '/cart',
         pageTitle: 'Your Cart',
-        products: products
+        products: products,
+        helpers: ejs_helpers
       });
     })
     .catch(err => {
@@ -140,11 +149,44 @@ exports.postCartDeleteProduct = (req, res, next) => {
     });
 };
 
-exports.postOrder = (req, res, next) => {
+exports.getCheckout = (req, res, next) => {
   req.user
     .populate('cart.items.productId')
     .execPopulate()
     .then(user => {
+      const products = user.cart.items;
+      let total = 0;
+      products.forEach(p => {
+        total += p.quantity * p.productId.price;
+      });
+      res.render('shop/checkout', {
+        path: '/checkout',
+        pageTitle: 'Checkout',
+        products: products,
+        totalSum: total,
+        helpers: ejs_helpers,
+        STRIPE_PUBLIC_KEY: process.env.STRIPE_PUBLIC_KEY
+      });
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(error);
+    });
+};
+
+exports.postOrder = (req, res, next) => {
+  const token = req.body.stripeToken;
+  let totalSum = 0;
+
+  req.user
+    .populate('cart.items.productId')
+    .execPopulate()
+    .then(user => {
+      user.cart.items.forEach(p => {
+        totalSum += p.quantity * p.productId.price;
+      });
+
       const products = user.cart.items.map(i => {
         return { quantity: i.quantity, product: { ...i.productId._doc } };
       });
@@ -159,6 +201,13 @@ exports.postOrder = (req, res, next) => {
       return order.save();
     })
     .then(result => {
+      const charge = stripe.charges.create({
+        amount: Math.round(totalSum.toFixed(2) * 100),
+        currency: 'usd',
+        description: 'Order charge',
+        source: token,
+        metadata: { order_id: result._id.toString() }
+      });
       return req.user.clearCart();
     })
     .then(() => {
@@ -177,7 +226,9 @@ exports.getOrders = (req, res, next) => {
       res.render('shop/orders', {
         path: '/orders',
         pageTitle: 'Your Orders',
-        orders: orders
+        orders: orders,
+        helpers: ejs_helpers,
+        formatDate: formatDate
       });
     })
     .catch(err => {
@@ -239,12 +290,19 @@ exports.getInvoice = (req, res, next) => {
 
       pdfDoc
         .fontSize(12)
-        .text(`Invoice Number: 555`, 50, 220)
+        .text(`Invoice Number: ${ejs_helpers.sliceStr(order._id)}`, 50, 220)
         .moveDown()
-        .text(`Invoice Date: ${formatDate(new Date())}`, 50, 245)
+        .text(
+          `Invoice Date: ${formatDate(
+            new Date(order.createdAt),
+            'MMM DD, YYYY'
+          )}`,
+          50,
+          245
+        )
         .moveDown()
         .font('Helvetica-Bold')
-        .text(`Order Total: ${formatCurrency(totalPrice)}`, 50, 270)
+        .text(`Order Total: ${ejs_helpers.currencyFormat(totalPrice)}`, 50, 270)
 
         .text(`Customer: ${order.user.name}`, 300, 220)
         .moveDown()
@@ -302,8 +360,8 @@ exports.getInvoice = (req, res, next) => {
           position,
           product.product.title,
           product.quantity,
-          product.product.price,
-          subtotal
+          ejs_helpers.currencyFormat(product.product.price),
+          ejs_helpers.currencyFormat(subtotal)
         );
       }
       pdfDoc
@@ -321,18 +379,6 @@ exports.getInvoice = (req, res, next) => {
           { align: 'center', width: 500 }
         );
       pdfDoc.end();
-
-      function formatDate(date) {
-        const day = date.getDate();
-        const month = date.getMonth() + 1;
-        const year = date.getFullYear();
-
-        return year + '/' + month + '/' + day;
-      }
-
-      function formatCurrency(cents) {
-        return '$' + cents.toFixed(2);
-      }
     })
     .catch(err => {
       console.log(err);

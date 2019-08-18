@@ -12,22 +12,34 @@
                     <% orders.forEach(order => { %>
                         <li class="orders__item">
                             <h1>Order - # <%= order._id %></h1>
+                            <h1>Order Date - <%= formatDate(new Date(order.createdAt), 'MMM DD, YYYY') %></h1>
+                            <hr>
+                            <div class='flex'>
+                            <h1 class='wide'>Title</h1>
+                            <h1>Units</h1>
+                            <h1>Price</h1>
+                            <h1>Subtotal</h1>
+                            </div>
+
                             <ul class="orders__products">
-                                <% let totalArray = [] %>
+                                <% let total = 0 %>
                                 <%order.products.forEach(p => {
-                                  %><li class="orders__products-item">
-                                    Title: <%= p.product.title %>  |
-                                    Units: (<%= p.quantity %>)   |
-                                    Price: $<%= p.product.price %> |
-                                    <%let total = p.quantity * p.product.price%>
-                                    Subtotal: $<%=total -%>
-                                    <% totalArray.push(total) %></li>
+                                  %><li class="orders__products-item flex">
+                                    <p class='wide'><%= p.product.title %></p>
+                                    <p><%= p.quantity %></p>
+                                   <p><%= helpers.currencyFormat(p.product.price) %></p>
+                                    <% let lineTotal = p.quantity * p.product.price%>
+                                    <% total += p.quantity * p.product.price%>
+                                    <p><%=helpers.currencyFormat(lineTotal) -%></p>
+                                    </li>
                                 <%});%>
                             </ul>
-                            <% const reducer = (accumulator, currentValue) => accumulator + currentValue %>
 
-                            <h1>Order Total: $<%= totalArray.reduce(reducer) %></h1>
+                            <div class='flex'>
                             <a href= "/orders/<%=order._id%>">View Invoice</a>
+                            <h1 class='total'>Total: <%= helpers.currencyFormat(total) %></h1>
+                            </div>
+
                         </li>
                     <% }); %>
                 </ul>

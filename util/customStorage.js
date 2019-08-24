@@ -26,7 +26,7 @@ customStorage.prototype._handleFile = function _handleFile(req, file, cb) {
     outStream.on('error', cb);
     outStream.on('finish', function() {
       cb(null, {
-        path: 'images/' + nodePath.basename(path),
+        path: path,
         size: outStream.bytesWritten
       });
     });

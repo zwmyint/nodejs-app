@@ -39,13 +39,10 @@ const upload = multer({
     destination: function(req, file, cb) {
       cb(
         null,
-        path.join(
-          __dirname,
-          '/images',
+        '/images/' +
           new Date().toISOString().replace(/:/g, '-') +
-            '-' +
-            file.originalname.replace(/\s+/g, '-')
-        )
+          '-' +
+          file.originalname
       );
     }
   }),

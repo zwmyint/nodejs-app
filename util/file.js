@@ -1,13 +1,15 @@
 const fs = require('fs');
 
 const deleteFile = filePath => {
-  fs.unlink(filePath, err => {
-    if (err) {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return error;
-    }
-  });
+  setTimeout(function() {
+    fs.unlink(filePath, err => {
+      if (err) {
+        const error = new Error(err);
+        error.httpStatusCode = 500;
+        return error;
+      }
+    });
+  }, 63000);
 };
 
 exports.deleteFile = deleteFile;

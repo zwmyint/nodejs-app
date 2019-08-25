@@ -31,9 +31,6 @@ const store = new MongoDbStore({
 });
 const csrfProtection = csrf();
 
-// const privateKey = fs.readFileSync('server.key');
-// const certificate = fs.readFileSync('server.cert');
-
 const upload = multer({
   storage: new customStorage({
     destination: function(req, file, cb) {

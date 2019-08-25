@@ -3,6 +3,15 @@ const { validationResult } = require('express-validator');
 const Product = require('../models/product');
 const User = require('../models/user');
 const ejs_helpers = require('../util/helpers');
+require('dotenv').config();
+
+const cloudinary = require('cloudinary');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_USER,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_SECRET_KEY
+});
 
 exports.getAddProduct = (req, res, next) => {
   res.render('admin/edit-product', {
@@ -54,42 +63,50 @@ exports.postAddProduct = (req, res, next) => {
     });
   }
 
-  const imageUrl = image.path;
+  const tempImage = image.path;
 
-  const product = new Product({
-    // _id: new mongoose.Types.ObjectId('5badf72403fd8b5be0366e81'),
-    title: title,
-    price: price,
-    description: description,
-    imageUrl: imageUrl,
-    userId: req.user
-  });
-  product
-    .save()
-    .then(result => {
-      console.log('Created Product');
-      res.redirect('/admin/products');
-    })
-    .catch(err => {
-      return res.status(500).render('admin/edit-product', {
-        pageTitle: 'Add Product',
-        path: '/admin/add-product',
-        editing: false,
-        hasError: true,
-        product: {
-          title: title,
-          imageUrl: imageUrl,
-          price: price,
-          description: description
-        },
-        error: 'Database operation failed, please try again.',
-        validationErrors: []
-      });
-      res.redirect('/500');
-      // const error = new Error(err);
-      // error.httpStatusCode = 500;
-      // return next(error);
+  cloudinary.v2.uploader.upload(tempImage, { folder: 'shop' }, function(
+    error,
+    result
+  ) {
+    // console.log(result, error);
+    const cloudImage = result.secure_url;
+    const cloudImageId = result.public_id;
+
+    //Delete temp Image
+    fileHelper.deleteFile(tempImage);
+
+    const product = new Product({
+      title: title,
+      price: price,
+      description: description,
+      imageUrl: cloudImage,
+      imageId: cloudImageId,
+      userId: req.user
     });
+    product
+      .save()
+      .then(result => {
+        console.log('Created Product');
+        res.redirect('/admin/products');
+      })
+      .catch(err => {
+        return res.status(500).render('admin/edit-product', {
+          pageTitle: 'Add Product',
+          path: '/admin/add-product',
+          editing: false,
+          hasError: true,
+          product: {
+            title: title,
+            imageUrl: imageUrl,
+            price: price,
+            description: description
+          },
+          error: 'Database operation failed, please try again.',
+          validationErrors: []
+        });
+      });
+  });
 };
 
 exports.getEditProduct = (req, res, next) => {
@@ -155,13 +172,39 @@ exports.postEditProduct = (req, res, next) => {
       product.price = updatedPrice;
       product.description = updatedDesc;
       if (image) {
-        fileHelper.deleteFile(product.imageUrl);
-        product.imageUrl = image.path;
+        //Destroy old image.
+        cloudinary.v2.uploader.destroy(product.imageId, function(
+          error,
+          result
+        ) {
+          console.log(result, error);
+        });
+
+        //upload image to temp folder
+        const tempImage = image.path;
+
+        //upload image to cloudinary
+        cloudinary.v2.uploader.upload(tempImage, { folder: 'shop' }, function(
+          error,
+          result
+        ) {
+          // console.log(result, error);
+          const cloudImage = result.secure_url;
+          const cloudImageId = result.public_id;
+
+          //delete the image from temp folder
+          fileHelper.deleteFile(tempImage);
+
+          //assign new image to cloudImage
+          product.imageUrl = cloudImage;
+          product.imageId = cloudImageId;
+
+          return product.save().then(result => {
+            console.log('UPDATED PRODUCT!');
+            res.redirect('/admin/products');
+          });
+        });
       }
-      return product.save().then(result => {
-        console.log('UPDATED PRODUCT!');
-        res.redirect('/admin/products');
-      });
     })
     .catch(err => {
       const error = new Error(err);
@@ -172,10 +215,8 @@ exports.postEditProduct = (req, res, next) => {
 
 exports.getProducts = (req, res, next) => {
   Product.find({ userId: req.user._id })
-    // .select('title price -_id')
-    // .populate('userId', 'name')
+
     .then(products => {
-      //console.log(products);
       res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
@@ -197,10 +238,18 @@ exports.deleteProduct = (req, res, next) => {
       if (!product) {
         return next(new Error('Product not found.'));
       }
+
       return Product.deleteOne({ _id: prodId, userId: req.user._id }).then(
         () => {
           // Delete the product image from the server
-          fileHelper.deleteFile(product.imageUrl);
+
+          cloudinary.v2.uploader.destroy(product.imageId, function(
+            error,
+            result
+          ) {
+            console.log(result, error);
+          });
+
           // Delete the product from every users cart
           User.find({}, (err, users) => {
             users.forEach(user => {

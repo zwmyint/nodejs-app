@@ -1,6 +1,6 @@
 # nodejs-app
 
-This is a complete nodeJS application practice with a stack of services for a full experience.
+This is a complete node.js application practice with a stack of services for a full experience.
 
 ## Getting Started
 

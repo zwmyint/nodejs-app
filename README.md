@@ -1,5 +1,7 @@
 # nodejs-app
 
+[![Node JS Commerce App][product-screenshot]](https://node-store-example.herokuapp.com/)
+
 This is a complete nodeJS application practice with a stack of services for a full experience.
 
 ## Getting Started
@@ -54,3 +56,5 @@ and other tools.
 - Hat tip to anyone whose code served as inspiration for this app.
 
 - Specially to Maximilian Schwarzmüller - Academind.
+
+[product-screenshot]: images/screenshot.png
